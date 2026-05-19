@@ -7,6 +7,7 @@ import folium
 from streamlit_folium import folium_static
 import pandas as pd
 import random
+import urllib.parse
 
 from styles import get_css
 from data import (
@@ -168,6 +169,12 @@ with st.expander("📋 Holiday List — Descriptions & Fun Facts", expanded=Fals
             shown_facts = random.sample(facts, min(2, len(facts)))
 
             with st.expander(f"📅 {d.strftime('%b %d')} — **{name}** ({country})"):
+                WIKI_COUNTRIES = {"Japan", "China", "Spain", "Germany", "United Kingdom", "United States", "France", "Morocco", "Romania", "India", "Ireland", "Canada"}
+                if country in WIKI_COUNTRIES:
+                    query = urllib.parse.quote(f"{name} {country} holiday")
+                    wiki_url = f"https://en.wikipedia.org/wiki/Special:Search?search={query}"
+                    st.markdown(f'##### <a href="{wiki_url}" target="_blank" style="color: #2563eb; text-decoration: none;">{name} ↗</a>', unsafe_allow_html=True)
+                
                 st.markdown(f'<div class="holiday-detail-desc">{desc}</div>', unsafe_allow_html=True)
                 if shown_facts:
                     st.markdown('<div class="fun-facts-title">💡 Fun Facts</div>', unsafe_allow_html=True)
@@ -185,6 +192,12 @@ with st.expander("🌍 Country Details", expanded=False):
             for d, name in info["holidays"]:
                 desc, facts = get_holiday_info(name, country)
                 with st.expander(f"{d.strftime('%A, %B %d')} — {name}"):
+                    WIKI_COUNTRIES = {"Japan", "China", "Spain", "Germany", "United Kingdom", "United States", "France", "Morocco", "Romania", "India", "Ireland", "Canada"}
+                    if country in WIKI_COUNTRIES:
+                        query = urllib.parse.quote(f"{name} {country} holiday")
+                        wiki_url = f"https://en.wikipedia.org/wiki/Special:Search?search={query}"
+                        st.markdown(f'**<a href="{wiki_url}" target="_blank" style="color: #2563eb; text-decoration: none;">{name} ↗</a>**', unsafe_allow_html=True)
+                    
                     st.write(desc)
                     if facts:
                         st.markdown("**💡 Did you know?**")
