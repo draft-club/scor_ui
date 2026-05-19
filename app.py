@@ -1,4 +1,4 @@
-"""World Holidays Explorer — A futuristic global holiday discovery tool."""
+"""HoliGlobe - World Holidays Explorer. Clean minimal UI."""
 import streamlit as st
 from datetime import date
 import calendar
@@ -6,66 +6,43 @@ import holidays
 import folium
 from streamlit_folium import folium_static
 import pandas as pd
-import json
+import random
 
-from styles import get_css, PALETTE
+from styles import get_css
 from data import (
     COUNTRIES, COORDS, get_flag,
     get_holidays_for_month, get_holidays_for_year,
     build_calendar_html,
 )
+from holiday_info import get_holiday_info
 
-# ── Page Config ──────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Vancanza — World Holidays Explorer",
-    page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="HoliGlobe", page_icon="🌍", layout="wide")
 st.markdown(get_css(), unsafe_allow_html=True)
 
-# ── Sidebar Controls ────────────────────────────────────────────────
+# ── Sidebar: ALL controls + toggles ─────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🌍 Vancanza")
-    st.markdown("*Global Holiday Intelligence*")
+    st.markdown("**🌍 HoliGlobe**")
+    st.caption("World Holidays Explorer")
     st.markdown("---")
 
     selected_countries = st.multiselect(
-        "🔍 Select Countries",
+        "Countries",
         list(COUNTRIES.keys()),
         default=["Morocco", "United States", "France", "Japan"],
-        help="Pick one or more countries to explore their holidays",
     )
 
     col_y, col_m = st.columns(2)
     with col_y:
-        year = st.selectbox(
-            "📅 Year",
-            list(range(2020, date.today().year + 3)),
-            index=date.today().year - 2020,
-        )
+        year = st.selectbox("Year", list(range(2020, date.today().year + 3)), index=date.today().year - 2020)
     with col_m:
-        month = st.selectbox(
-            "📆 Month",
-            list(range(1, 13)),
-            index=date.today().month - 1,
-            format_func=lambda m: calendar.month_abbr[m],
-        )
+        month = st.selectbox("Month", list(range(1, 13)), index=date.today().month - 1, format_func=lambda m: calendar.month_abbr[m])
 
     st.markdown("---")
-    view_mode = st.radio("📊 View Mode", ["Monthly", "Yearly Overview"], horizontal=True)
-    show_comparison = st.checkbox("📈 Country Comparison", value=False)
-
-    st.markdown("---")
-    st.markdown("##### 🎨 Quick Presets")
-    preset = st.selectbox("Load a preset", [
-        "Custom", "G7 Nations", "BRICS", "Europe Top 5",
-        "Middle East", "Southeast Asia", "Africa",
-    ])
+    preset = st.selectbox("Quick presets", ["Custom", "G7", "BRICS", "Europe", "Middle East", "Southeast Asia", "Africa"])
     PRESETS = {
-        "G7 Nations": ["United States", "United Kingdom", "France", "Germany", "Japan", "Italy", "Canada"],
+        "G7": ["United States", "United Kingdom", "France", "Germany", "Japan", "Italy", "Canada"],
         "BRICS": ["Brazil", "Russia", "India", "China", "South Africa"],
-        "Europe Top 5": ["France", "Germany", "Spain", "Italy", "United Kingdom"],
+        "Europe": ["France", "Germany", "Spain", "Italy", "United Kingdom"],
         "Middle East": ["Saudi Arabia", "United Arab Emirates", "Qatar", "Kuwait", "Bahrain", "Oman"],
         "Southeast Asia": ["Thailand", "Vietnam", "Indonesia", "Philippines", "Singapore", "Malaysia"],
         "Africa": ["Morocco", "South Africa", "Kenya", "Nigeria", "Egypt", "Ethiopia"],
@@ -75,291 +52,194 @@ with st.sidebar:
         if valid:
             selected_countries = valid
 
+    # ── Quick toggles (in sidebar, under controls) ───────────────────
     st.markdown("---")
-    st.caption(f"📦 {len(COUNTRIES)} countries supported")
-    st.caption(f"🔌 Powered by `holidays` library")
+    st.markdown('<div class="section-label" style="border:none;margin-top:4px;">Selected</div>', unsafe_allow_html=True)
 
-# ── Hero Header ──────────────────────────────────────────────────────
+# ── Compute holidays ────────────────────────────────────────────────
 month_name = calendar.month_name[month]
-st.markdown(f"""
-<div class="hero-header">
-    <div class="hero-title">🌍 Vancanza — World Holidays Explorer</div>
-    <div class="hero-sub">Discover public holidays across {len(COUNTRIES)}+ countries • {month_name} {year}</div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── Compute Holiday Data ─────────────────────────────────────────────
-all_holidays_data = {}
-total_holidays = 0
+today = date.today()
+all_data = {}
+total = 0
 for country in selected_countries:
     code = COUNTRIES.get(country)
     if not code:
         continue
-    h_list = get_holidays_for_month(code, year, month)
-    all_holidays_data[country] = {"code": code, "holidays": h_list, "count": len(h_list)}
-    total_holidays += len(h_list)
+    h = get_holidays_for_month(code, year, month)
+    all_data[country] = {"code": code, "holidays": h, "count": len(h)}
+    total += len(h)
 
-# ── Stats Cards ──────────────────────────────────────────────────────
-next_holiday = None
-today = date.today()
-for country, info in all_holidays_data.items():
-    for d, name in info["holidays"]:
-        if d >= today and (next_holiday is None or d < next_holiday[0]):
-            next_holiday = (d, name, country)
+# Render toggle chips inside the sidebar (needs all_data computed first)
+with st.sidebar:
+    if selected_countries:
+        toggle_html = '<div class="toggle-grid">'
+        for country in selected_countries:
+            info = all_data.get(country, {})
+            count = info.get("count", 0)
+            code = info.get("code", "")
+            flag = get_flag(code) if code else ""
+            badge_class = "toggle-chip active" if count > 0 else "toggle-chip"
+            toggle_html += f'<div class="{badge_class}">{flag} {country}<span class="chip-count">{count}</span></div>'
+        toggle_html += '</div>'
+        st.markdown(toggle_html, unsafe_allow_html=True)
+    else:
+        st.caption("No countries selected")
 
-next_str = f"{next_holiday[0].strftime('%b %d')} — {next_holiday[2]}" if next_holiday else "None this month"
+    # Quick stats
+    st.markdown(f'''
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number">{len(selected_countries)}</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{total}</div>
+                <div class="stat-label">Holidays</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{month_name[:3]}</div>
+                <div class="stat-label">{year}</div>
+            </div>
+        </div>
+    ''', unsafe_allow_html=True)
 
-st.markdown(f"""
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-icon">🌐</div>
-        <div class="stat-value">{len(selected_countries)}</div>
-        <div class="stat-label">Countries Selected</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon">🎉</div>
-        <div class="stat-value">{total_holidays}</div>
-        <div class="stat-label">Holidays Found</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon">📅</div>
-        <div class="stat-value">{month_name[:3]} {year}</div>
-        <div class="stat-label">Current Period</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon">⏭️</div>
-        <div class="stat-value" style="font-size:1rem">{next_str}</div>
-        <div class="stat-label">Next Holiday</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# ── Title ────────────────────────────────────────────────────────────
+st.markdown('<div class="page-title">🌍 HoliGlobe</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="page-sub">{len(selected_countries)} countries selected &middot; {month_name} {year} &middot; {total} holidays found</div>', unsafe_allow_html=True)
 
-# ── Main Content: Map + Calendar ─────────────────────────────────────
-col_map, col_cal = st.columns([3, 2])
+# ── TOP ROW: Map (center) + Calendar (RHS) — same level ─────────────
+col_map, col_calendar = st.columns([3, 2])
 
 with col_map:
-    st.markdown('<div class="glass-panel"><h3><span class="icon">🗺️</span> Interactive World Map</h3>', unsafe_allow_html=True)
-
     if not selected_countries:
-        st.info("Select countries from the sidebar to see them on the map.")
+        st.info("Select countries from the sidebar.")
     else:
-        m = folium.Map(
-            location=[20, 10],
-            zoom_start=2,
-            tiles="CartoDB dark_matter",
-            attr="Vancanza",
-        )
+        m = folium.Map(location=[20, 10], zoom_start=2, tiles="CartoDB positron")
 
-        for country, info in all_holidays_data.items():
+        for country, info in all_data.items():
             code = info["code"]
             coords = COORDS.get(code)
             if not coords:
                 continue
             count = info["count"]
             h_list = info["holidays"]
-            radius = 7 + count * 3
-            flag = get_flag(code)
+            radius = 6 + count * 2
 
-            # Build popup HTML
-            popup_html = f"""
-            <div style="font-family:Inter,sans-serif;min-width:200px;background:#0f2035;
-                        color:#e0f7fa;padding:14px;border-radius:10px;border:1px solid rgba(0,131,143,0.3)">
-                <div style="font-size:16px;font-weight:700;margin-bottom:8px;
-                            color:#00e5ff">{flag} {country}</div>
-                <div style="font-size:12px;color:#b0bec5;margin-bottom:6px">
-                    {month_name} {year} • {count} holiday{'s' if count != 1 else ''}
-                </div>
-            """
-            if h_list:
-                for d, name in h_list[:8]:
-                    popup_html += f"""
-                    <div style="display:flex;gap:8px;align-items:center;margin:4px 0;
-                                padding:4px 8px;background:rgba(0,200,83,0.1);border-radius:6px;
-                                border-left:2px solid #00c853">
-                        <span style="font-size:11px;color:#00c853;font-weight:600;
-                                     white-space:nowrap">{d.strftime('%b %d')}</span>
-                        <span style="font-size:11px;color:#e0f7fa">{name}</span>
-                    </div>"""
-                if count > 8:
-                    popup_html += f'<div style="font-size:11px;color:#607d8b;margin-top:4px">...and {count-8} more</div>'
-            else:
-                popup_html += '<div style="font-size:12px;color:#607d8b">No holidays this month</div>'
-            popup_html += "</div>"
+            popup_lines = [f"<b>{country}</b> — {month_name} {year}<br>{count} holiday{'s' if count != 1 else ''}<br>"]
+            for d, name in h_list[:10]:
+                popup_lines.append(f"<span style='font-size:12px'>{d.strftime('%b %d')}: {name}</span><br>")
+            if count > 10:
+                popup_lines.append(f"<i>...and {count - 10} more</i>")
+            popup_html = "".join(popup_lines)
 
-            # Color based on holiday count
-            if count == 0:
-                fill_color = "#455a64"
-            elif count <= 2:
-                fill_color = "#00838f"
-            elif count <= 5:
-                fill_color = "#00c853"
-            else:
-                fill_color = "#00e5ff"
-
+            fill = "#059669" if count else "#9ca3af"
             folium.CircleMarker(
-                location=coords,
-                radius=radius,
-                color=PALETTE["accent"],
-                weight=2,
-                fill=True,
-                fill_color=fill_color,
-                fill_opacity=0.75,
-                popup=folium.Popup(popup_html, max_width=320),
-                tooltip=f"{flag} {country}: {count} holidays",
+                location=coords, radius=radius,
+                color="#2563eb", weight=1, fill=True,
+                fill_color=fill, fill_opacity=0.7,
+                popup=folium.Popup(popup_html, max_width=280),
+                tooltip=f"{country}: {count} holidays",
             ).add_to(m)
 
-            # Add a subtle pulsing ring for countries with many holidays
-            if count >= 3:
-                folium.CircleMarker(
-                    location=coords,
-                    radius=radius + 8,
-                    color=fill_color,
-                    weight=1,
-                    fill=False,
-                    opacity=0.3,
-                ).add_to(m)
+        folium_static(m, width=None, height=440)
 
-        folium_static(m, width=700, height=480)
-    st.markdown('</div>', unsafe_allow_html=True)
+with col_calendar:
+    st.markdown(f'<div class="section-label">Calendar — {month_name} {year}</div>', unsafe_allow_html=True)
+    aggregated = {}
+    for country, info in all_data.items():
+        for d, name in info["holidays"]:
+            aggregated.setdefault(d.day, []).append(f"{country}: {name}")
+    cal_html = build_calendar_html(year, month, aggregated, today)
+    st.markdown(cal_html, unsafe_allow_html=True)
 
-with col_cal:
-    st.markdown('<div class="glass-panel"><h3><span class="icon">📅</span> Holiday Calendar</h3>', unsafe_allow_html=True)
-
-    if not selected_countries:
-        st.write("No country selected.")
-    else:
-        # Aggregate holidays for calendar
-        aggregated = {}
-        for country, info in all_holidays_data.items():
-            for d, name in info["holidays"]:
-                aggregated.setdefault(d.day, []).append(f"{country}: {name}")
-
-        cal_html = build_calendar_html(year, month, aggregated, today)
-        st.markdown(cal_html, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Country badges
-    st.markdown('<div class="glass-panel"><h3><span class="icon">🏷️</span> Selected Countries</h3>', unsafe_allow_html=True)
-    badges_html = ""
-    for country, info in all_holidays_data.items():
-        flag = get_flag(info["code"])
-        badges_html += f'<span class="country-badge">{flag} {country} <span class="count-badge">{info["count"]}</span></span>'
-    st.markdown(badges_html, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ── Tabs: Details, Comparison, Export ────────────────────────────────
+# ── BELOW: Collapsible details ──────────────────────────────────────
 st.markdown("---")
-tabs = st.tabs(["📋 Holiday Details", "📊 Comparison", "📥 Export Data"])
 
-with tabs[0]:
-    if not selected_countries:
-        st.info("Select countries to see holiday details.")
+# Holiday list with clickable details
+with st.expander("📋 Holiday List — Descriptions & Fun Facts", expanded=False):
+    all_items = []
+    for country, info in all_data.items():
+        for d, name in info["holidays"]:
+            all_items.append((d, name, country))
+    all_items.sort()
+
+    if all_items:
+        for i, (d, name, country) in enumerate(all_items):
+            desc, facts = get_holiday_info(name, country)
+            # Pick up to 2 random fun facts to keep it fresh
+            shown_facts = random.sample(facts, min(2, len(facts)))
+
+            with st.expander(f"📅 {d.strftime('%b %d')} — **{name}** ({country})"):
+                st.markdown(f'<div class="holiday-detail-desc">{desc}</div>', unsafe_allow_html=True)
+                if shown_facts:
+                    st.markdown('<div class="fun-facts-title">💡 Fun Facts</div>', unsafe_allow_html=True)
+                    for fact in shown_facts:
+                        st.markdown(f'<div class="fun-fact-item">• {fact}</div>', unsafe_allow_html=True)
+                st.caption(f"📍 {country} · {d.strftime('%A, %B %d, %Y')}")
     else:
-        for country, info in all_holidays_data.items():
-            flag = get_flag(info["code"])
-            with st.expander(f"{flag} {country} — {info['count']} holidays in {month_name} {year}", expanded=len(selected_countries) <= 3):
-                if info["holidays"]:
-                    html_items = ""
-                    for d, name in info["holidays"]:
-                        day_name = d.strftime("%A")
-                        html_items += f"""
-                        <div class="h-list-item">
-                            <div class="h-date">{d.strftime('%b %d')}<br><span style="font-size:0.65rem;opacity:0.7">{day_name}</span></div>
-                            <div class="h-info">
-                                <div class="name">{name}</div>
-                                <div class="country">{flag} {country}</div>
-                            </div>
-                        </div>"""
-                    st.markdown(html_items, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"*No public holidays in {month_name} {year}*")
+        st.write("No holidays found for this period.")
 
-with tabs[1]:
-    if show_comparison and len(selected_countries) >= 2:
-        st.markdown("#### 📊 Holiday Count Comparison")
-
-        if view_mode == "Monthly":
-            comp_data = {country: info["count"] for country, info in all_holidays_data.items()}
-            df = pd.DataFrame({"Country": list(comp_data.keys()), "Holidays": list(comp_data.values())})
-            df = df.sort_values("Holidays", ascending=True)
-            st.bar_chart(df.set_index("Country"))
-        else:
-            # Yearly overview
-            yearly = {}
-            for country in selected_countries:
-                code = COUNTRIES.get(country)
-                if code:
-                    y_holidays = get_holidays_for_year(code, year)
-                    monthly_counts = [0] * 12
-                    for d, name in y_holidays:
-                        monthly_counts[d.month - 1] += 1
-                    yearly[country] = monthly_counts
-
-            if yearly:
-                months = [calendar.month_abbr[i] for i in range(1, 13)]
-                df_yearly = pd.DataFrame(yearly, index=months)
-                st.line_chart(df_yearly)
-
-                # Summary table
-                summary = []
-                for country, counts in yearly.items():
-                    summary.append({
-                        "Country": f"{get_flag(COUNTRIES[country])} {country}",
-                        "Total Holidays": sum(counts),
-                        "Busiest Month": calendar.month_name[counts.index(max(counts)) + 1],
-                        "Max in Month": max(counts),
-                    })
-                st.dataframe(pd.DataFrame(summary), use_container_width=True, hide_index=True)
-    elif not show_comparison:
-        st.info("Enable **Country Comparison** in the sidebar to see charts.")
-    else:
-        st.info("Select at least 2 countries for comparison.")
-
-with tabs[2]:
-    if selected_countries:
-        # Build export data
-        export_rows = []
-        for country, info in all_holidays_data.items():
+# Country details with holiday descriptions
+with st.expander("🌍 Country Details", expanded=False):
+    for country, info in all_data.items():
+        st.markdown(f"### {get_flag(info['code'])} {country} — {info['count']} holidays")
+        if info["holidays"]:
             for d, name in info["holidays"]:
-                export_rows.append({
+                desc, facts = get_holiday_info(name, country)
+                with st.expander(f"{d.strftime('%A, %B %d')} — {name}"):
+                    st.write(desc)
+                    if facts:
+                        st.markdown("**💡 Did you know?**")
+                        for fact in facts[:2]:
+                            st.markdown(f"- {fact}")
+        else:
+            st.write("No holidays this month.")
+        st.markdown("---")
+
+# Yearly overview
+with st.expander("📊 Yearly Overview", expanded=False):
+    if len(selected_countries) >= 2:
+        yearly = {}
+        for country in selected_countries:
+            code = COUNTRIES.get(country)
+            if code:
+                yh = get_holidays_for_year(code, year)
+                counts = [0] * 12
+                for d, name in yh:
+                    counts[d.month - 1] += 1
+                yearly[country] = counts
+        if yearly:
+            months = [calendar.month_abbr[i] for i in range(1, 13)]
+            df = pd.DataFrame(yearly, index=months)
+            st.line_chart(df)
+
+            summary = []
+            for country, counts in yearly.items():
+                summary.append({
                     "Country": country,
-                    "ISO Code": info["code"],
-                    "Date": d.isoformat(),
-                    "Day": d.strftime("%A"),
-                    "Holiday Name": name,
+                    "Total": sum(counts),
+                    "Busiest month": calendar.month_name[counts.index(max(counts)) + 1],
                 })
-
-        if export_rows:
-            df_export = pd.DataFrame(export_rows)
-            st.dataframe(df_export, use_container_width=True, hide_index=True)
-
-            csv = df_export.to_csv(index=False)
-            st.download_button(
-                "📥 Download as CSV",
-                csv,
-                f"holidays_{month_name}_{year}.csv",
-                "text/csv",
-            )
-
-            json_str = df_export.to_json(orient="records", indent=2)
-            st.download_button(
-                "📥 Download as JSON",
-                json_str,
-                f"holidays_{month_name}_{year}.json",
-                "application/json",
-            )
-        else:
-            st.info("No holidays found for the selected criteria.")
+            st.dataframe(pd.DataFrame(summary), use_container_width=True, hide_index=True)
     else:
-        st.info("Select countries to export holiday data.")
+        st.write("Select at least 2 countries to compare.")
 
-# ── Footer ───────────────────────────────────────────────────────────
-st.markdown("---")
-st.markdown(f"""
-<div style="text-align:center;padding:20px;color:{PALETTE['text_dim']};font-size:0.8rem">
-    🌍 <b style="color:{PALETTE['teal_light']}">Vancanza</b> — World Holidays Explorer •
-    Powered by <code>holidays</code> library •
-    {len(COUNTRIES)} countries • {year}
-</div>
-""", unsafe_allow_html=True)
+# Export
+with st.expander("💾 Export Data", expanded=False):
+    rows = []
+    for country, info in all_data.items():
+        for d, name in info["holidays"]:
+            desc, _ = get_holiday_info(name, country)
+            rows.append({
+                "Country": country,
+                "Date": d.isoformat(),
+                "Day": d.strftime("%A"),
+                "Holiday": name,
+                "Description": desc,
+            })
+    if rows:
+        df_exp = pd.DataFrame(rows)
+        st.dataframe(df_exp, use_container_width=True, hide_index=True)
+        st.download_button("Download CSV", df_exp.to_csv(index=False), f"holidays_{month_name}_{year}.csv", "text/csv")
+    else:
+        st.write("No data to export.")
