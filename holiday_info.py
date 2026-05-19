@@ -399,6 +399,19 @@ HOLIDAY_DB = {
             "In some countries, Boxing Day is one of the biggest shopping days of the year.",
         ],
     },
+    "summer bank holiday": {
+        "desc": "A public holiday in the United Kingdom, traditionally marking the end of the summer season. It usually falls on the last Monday of August (except in Scotland, where it is earlier).",
+        "facts": [
+            "Bank holidays were introduced by the Bank Holidays Act of 1871, spearheaded by Sir John Lubbock.",
+            "It is often celebrated with short trips, DIY home improvements, and the famous Notting Hill Carnival in London.",
+        ],
+    },
+    "bank holiday": {
+        "desc": "A public holiday in the United Kingdom, some Commonwealth countries, and Ireland. Originally days when banks were officially closed, they are now general public holidays.",
+        "facts": [
+            "The term 'bank holiday' is used universally in the UK to refer to all public holidays.",
+        ],
+    },
     "st. patrick": {
         "desc": "An Irish cultural and religious holiday celebrating St. Patrick, the foremost patron saint of Ireland. Famous worldwide for green attire, parades, and shamrocks.",
         "facts": [
