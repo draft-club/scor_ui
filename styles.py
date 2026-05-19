@@ -19,6 +19,7 @@ table.hcal td.empty { background: transparent; border-color: transparent; }
 table.hcal td.holiday { background: #d1fae5; border-color: #059669; color: #059669; font-weight: 600; }
 table.hcal td.today { background: #dbeafe; border-color: #2563eb; }
 .h-name { font-size: 0.52rem; color: #059669; display: block; margin-top: 1px; line-height: 1.1; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-more { color: #047857; font-weight: 600; font-size: 0.50rem; margin-top: 2px; }
 
 /* Holiday list rows */
 .h-row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid #f3f4f6; }

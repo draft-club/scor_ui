@@ -148,9 +148,20 @@ def build_calendar_html(year, month, aggregated_holidays, today=None):
                 cls = f' class="{" ".join(classes)}"' if classes else ""
                 content = f"<b>{day}</b>"
                 if day in aggregated_holidays:
-                    # Show first holiday name abbreviated
-                    first = aggregated_holidays[day][0].split(":")[1].strip() if ":" in aggregated_holidays[day][0] else aggregated_holidays[day][0]
-                    content += f'<span class="h-name" title="{first}">{first}</span>'
+                    holidays_list = aggregated_holidays[day]
+                    # Tooltip with all holidays
+                    titles = "&#10;".join(holidays_list)
+                    
+                    # Show up to 2 holidays
+                    for h_str in holidays_list[:2]:
+                        name = h_str.split(":", 1)[1].strip() if ":" in h_str else h_str
+                        content += f'<span class="h-name" title="{titles}">{name}</span>'
+                    
+                    # Show +X more if needed
+                    if len(holidays_list) > 2:
+                        extra = len(holidays_list) - 2
+                        content += f'<span class="h-name h-more" title="{titles}">+{extra} more</span>'
+                    
                 html += f"<td{cls}>{content}</td>"
         html += '</tr>'
     html += '</tbody></table>'
