@@ -106,7 +106,7 @@ def get_flag(code):
 def get_holidays_for_month(country_code, year, month):
     """Get holidays for a specific country/year/month."""
     try:
-        cal = holidays.country_holidays(country_code, years=year)
+        cal = holidays.country_holidays(country_code, years=year, language="en_US")
     except Exception:
         return []
     items = []
@@ -119,7 +119,7 @@ def get_holidays_for_month(country_code, year, month):
 def get_holidays_for_year(country_code, year):
     """Get all holidays for a country in a given year."""
     try:
-        cal = holidays.country_holidays(country_code, years=year)
+        cal = holidays.country_holidays(country_code, years=year, language="en_US")
     except Exception:
         return []
     items = [(d, name) for d, name in cal.items() if isinstance(d, date)]
