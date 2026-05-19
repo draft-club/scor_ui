@@ -9,8 +9,10 @@ HOLIDAY_DB = {
         "facts": [
             "The Times Square ball drop in NYC has been a tradition since 1907.",
             "In Spain, people eat 12 grapes at midnight — one for each chime of the clock.",
-            "The earliest known New Year celebrations date back 4,000 years to ancient Babylon.",
-            "In Japan, Buddhist temples ring their bells 108 times to cleanse 108 human sins.",
+            "In Denmark, people smash old plates on friends' doorsteps to bring good luck.",
+            "In Colombia, to invite travel blessings, some carry an empty suitcase around the block.",
+            "In Brazil, people wear white for peace and jump over seven waves in the ocean, making a wish each time.",
+            "New Year's Day is the most celebrated holiday globally, with ~90% of the world getting the day off.",
         ],
     },
     "chinese new year": {
@@ -35,10 +37,11 @@ HOLIDAY_DB = {
         "desc": "A Christian holiday celebrating the birth of Jesus Christ, widely observed on December 25th. It has evolved into a global cultural celebration with gift-giving, decorations, and family traditions.",
         "facts": [
             "Christmas was not widely celebrated in America until the 19th century.",
-            "The tradition of Christmas trees originated in 16th-century Germany.",
+            "About 30 countries around the world do not mark Christmas as a public holiday at all.",
             "Santa Claus is based on St. Nicholas, a 4th-century Greek bishop known for generosity.",
-            "In Iceland, there are 13 Yule Lads instead of one Santa Claus.",
-            "'Jingle Bells' was originally written for Thanksgiving, not Christmas.",
+            "In Catalonia, Spain, a hollow 'Christmas Log' (Tió de Nadal) is kept warm and 'fed' before 'pooping' presents.",
+            "In Venezuela, it is a tradition in Caracas to roller skate to early morning Christmas mass.",
+            "In Japan, Christmas is celebrated as a romantic occasion featuring a tradition of eating KFC.",
         ],
     },
     "christmas day": {
@@ -54,6 +57,7 @@ HOLIDAY_DB = {
         "facts": [
             "In many European countries, presents are exchanged on Christmas Eve rather than Christmas Day.",
             "NORAD has tracked Santa's journey on Christmas Eve since 1955.",
+            "In Norway, many people hide their brooms on Christmas Eve to prevent witches and evil spirits from stealing them for a joyride.",
         ],
     },
     # ── EASTER ───────────────────────────────────────────────────────
@@ -494,6 +498,20 @@ HOLIDAY_DB = {
         "desc": "Commemorates Morocco's Manifesto of Independence, signed on January 11, 1944, demanding independence from France and Spain.",
         "facts": [
             "The manifesto was signed by 66 Moroccan nationalists.",
+        ],
+    },
+    "melon day": {
+        "desc": "A national holiday in Turkmenistan dedicated to the muskmelon, celebrated on the second Sunday of August.",
+        "facts": [
+            "Turkmenistan is famous for producing nearly 400 varieties of muskmelon.",
+            "The holiday was established in 1994 by the country's first president.",
+        ],
+    },
+    "night of the radishes": {
+        "desc": "An annual event in Oaxaca, Mexico (Noche de Rábanos) on December 23rd where locals carve elaborate scenes out of giant radishes.",
+        "facts": [
+            "The radishes used are specially grown for the event and can weigh up to 3 kg (6.6 lbs).",
+            "The tradition started in 1897 to attract customers to the Christmas market.",
         ],
     },
 }

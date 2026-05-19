@@ -21,23 +21,10 @@ st.markdown(get_css(), unsafe_allow_html=True)
 
 # ── Sidebar: ALL controls + toggles ─────────────────────────────────
 with st.sidebar:
-    st.markdown("**🌍 HoliGlobe**")
+    st.markdown("**Explorer Controls**")
     st.caption("World Holidays Explorer")
     st.markdown("---")
 
-    selected_countries = st.multiselect(
-        "Countries",
-        list(COUNTRIES.keys()),
-        default=["Morocco", "United States", "France", "Japan"],
-    )
-
-    col_y, col_m = st.columns(2)
-    with col_y:
-        year = st.selectbox("Year", list(range(2020, date.today().year + 3)), index=date.today().year - 2020)
-    with col_m:
-        month = st.selectbox("Month", list(range(1, 13)), index=date.today().month - 1, format_func=lambda m: calendar.month_abbr[m])
-
-    st.markdown("---")
     preset = st.selectbox("Quick presets", ["Custom", "G7", "BRICS", "Europe", "Middle East", "Southeast Asia", "Africa"])
     PRESETS = {
         "G7": ["United States", "United Kingdom", "France", "Germany", "Japan", "Italy", "Canada"],
@@ -47,10 +34,21 @@ with st.sidebar:
         "Southeast Asia": ["Thailand", "Vietnam", "Indonesia", "Philippines", "Singapore", "Malaysia"],
         "Africa": ["Morocco", "South Africa", "Kenya", "Nigeria", "Egypt", "Ethiopia"],
     }
-    if preset != "Custom" and preset in PRESETS:
-        valid = [c for c in PRESETS[preset] if c in COUNTRIES]
-        if valid:
-            selected_countries = valid
+
+    if preset == "Custom":
+        selected_countries = st.multiselect(
+            "Countries",
+            list(COUNTRIES.keys()),
+            default=["Morocco", "United States", "France", "Japan"],
+        )
+    else:
+        selected_countries = [c for c in PRESETS.get(preset, []) if c in COUNTRIES]
+
+    col_y, col_m = st.columns(2)
+    with col_y:
+        year = st.selectbox("Year", list(range(2020, date.today().year + 3)), index=date.today().year - 2020)
+    with col_m:
+        month = st.selectbox("Month", list(range(1, 13)), index=date.today().month - 1, format_func=lambda m: calendar.month_abbr[m])
 
     # ── Quick toggles (in sidebar, under controls) ───────────────────
     st.markdown("---")
