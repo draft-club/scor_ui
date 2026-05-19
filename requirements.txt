@@ -1,0 +1,6 @@
+streamlit>=1.30.0
+holidays>=0.40
+folium>=0.15.0
+streamlit-folium>=0.18.0
+pandas>=2.0.0
+pycountry>=22.3.5
